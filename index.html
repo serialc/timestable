@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang='en'>
+	<head>
+		<meta charset=utf-8>
+		<!-- jQuery -->
+		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+		<!-- D3 -->
+		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+		<!-- BS options -->
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			body {
+				background-color: white;
+			}
+			#question {
+				font-size: 3em;
+				height: 2em;
+			}
+			#numpad, #matrix, #question {
+				text-align: center;
+			}
+			#numpad {
+				font-size: 3.5em;
+			}
+			#qc {
+				padding: 3px 5px;
+
+			}
+			#qp {
+				width: 0%;
+				height: 10px;
+			}
+			.emptysq {
+				stroke: lightgrey;
+				fill: white;
+			}
+			.fullsq {
+				stroke: black;
+				fill: lightblue;
+		</style>
+	</head>
+	<body>
+		<div id='container' class='container'>
+			<div class='row'>
+				<div class='col-sm-12'>
+					<h1></h1>
+				</div>
+			</div>
+			<div class='row'>
+				<div class='col-sm-6'>
+					<div class='row'>
+						<div id='question' class='col-sm-12'>
+							<span id='qx'>x</span> x <span id='qy'>y</span> = <span id='qr'>?</span> <span id='qc'></span>
+							<div id='qp' class='bg-primary'></div>
+						</div>
+					</div>
+					<div class='row'>
+						<div id='matrix' class='col-sm-12'>
+						</div>
+					</div>
+				</div>
+				<div id='numpad' class='col-sm-6'>
+				</div>
+			</div>
+			<!-- New rows for lessons come here -->
+		</div>
+	</body>
+
+	<script>
+		// global var and settings
+		MP = {
+			rsize: 18,
+			space: 4
+			};
+
+
+		MP.init = function() {	
+			// game setup
+			$('#qc').hide();
+			MP.progress_bar = 0;
+
+			// do SVG setup
+			MP.mat = d3.select("#matrix").append("svg")
+				.attr("width", '300')
+				.attr("height", '300');
+			MP.num = d3.select("#numpad").append("svg")
+				.attr("width", '300')
+				.attr("height", '400');
+
+			// create rects
+			var rsize = MP.rsize;
+			var space = MP.space;
+			var bump = 5;
+			for ( x = 0; x < 13; x = x + 1 ) {
+				for ( y = 0; y < 13; y = y + 1 ) {
+					// don't put label for lables row/col
+					if ( x === 0 && y === 0 ) continue;
+
+					// put top labels
+					if ( y === 0 ) {
+						if ( x < 10 ) {
+							MP.mat.append('text').text(x).attr('x', bump + space + x * (rsize + space)).attr('y', rsize + space + y * (rsize + space)).attr('xlab', x);
+						} else {
+							MP.mat.append('text').text(x).attr('x', space + x * (rsize + space)).attr('y', rsize + space + y * (rsize + space)).attr('xlab', x);
+					}}
+
+					// put left labels
+					if ( x === 0 ) {
+						if ( y < 10 ) {
+							MP.mat.append('text').text(y).attr('x', bump + space + x * (rsize + space)).attr('y', - bump + rsize + space + y * (rsize + space)).attr('ylab', y);
+						} else {
+							MP.mat.append('text').text(y).attr('x', space + x * (rsize + space)).attr('y', - bump + rsize + space + y * (rsize + space)).attr('ylab', y);
+						}
+					}
+
+					// draw boxes
+					if ( x > 0 && y > 0 ) MP.mat.append('rect').attr('x', space + (x) * (rsize + space)).attr('y', space + (y) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'm' + x + '_' + y);
+				}
+			}
+
+			// create keypad
+			var numval = 9;
+			rsize = rsize * 5;
+			for ( y = 1; y < 4; y = y + 1 ) {
+				for ( x = 3; x > 0; x = x - 1 ) {
+					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq');
+					MP.num.append('text').text(numval).attr('x', space + (x-1) * (rsize + space) + rsize/3).attr('y', space + (y-1) * (rsize + space) + rsize/1.5);
+					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', numval).on('mousedown', MP.numPadPress);
+					numval = numval - 1;
+				}
+			}
+
+			// add zero button
+			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('class', 'emptysq');
+			MP.num.append('text').text(0).attr('x', 1.3 * rsize + 2 * space).attr('y', 3.75 * rsize + 3 * space);
+			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', 0).on('mousedown', MP.numPadPress);
+
+			// start game
+			MP.askQuestion();
+		};
+
+		MP.askQuestion = function() {
+			// reset some things
+			MP.progress_bar = 0;
+			MP.freeze_numpad = false;
+			$('#qr').html('?');
+			$('#qc').hide();
+			$('#qp').width(0);
+			$('#question').removeClass('bg-danger bg-success');
+
+			// select two values to multiply
+			var qx = parseInt(Math.random() * 100,10)%13;
+			var qy = parseInt(Math.random() * 100,10)%13;
+
+			MP.answer = (qx * qy).toString();
+
+			// display the values in question
+			$('#qx').html(qx);
+			$('#qy').html(qy);
+
+			// display the boxes
+			for ( x = 0; x < 13; x = x + 1 ) {
+				for ( y = 0; y < 13; y = y + 1 ) {
+					if ( x <= qx && y <= qy) {
+						MP.mat.select('#m' + x + '_' + y).attr('class', 'fullsq');
+					} else {
+						MP.mat.select('#m' + x + '_' + y).attr('class', 'emptysq');
+					}
+				}
+			}
+		};
+
+		MP.numPadPress = function() {
+			// response
+			var r = $('#qr');
+			
+			if ( MP.freeze_numpad ) return;
+
+			// put value in response box
+			if ( r.html() === '?' ) {
+				r.html(this.getAttribute('val'));
+			} else {
+				r.html(r.html() + this.getAttribute('val'));
+			}
+
+			// success
+			if ( r.html() === MP.answer ) {
+				$('#question').addClass('bg-success');
+				setTimeout(MP.waiting, 1);
+			} 
+			// wrong
+			if ( MP.answer.slice(0,r.html().length) !== r.html() ) {
+				$('#question').addClass('bg-danger');
+				$('#qc').show().html(MP.answer);
+				$('#qc').addClass('bg-success');
+				MP.freeze_numpad = true;
+				setTimeout(MP.waiting, 1);
+			}
+			// response incomplete do nothing
+		};
+
+		MP.waiting = function() {
+			if( MP.progress_bar === 100) {
+				// load next question
+				setTimeout(MP.askQuestion, 10);
+			} else {
+				$('#qp').width(MP.progress_bar + '%');
+				MP.progress_bar = MP.progress_bar + 1;
+				setTimeout(MP.waiting, 15);
+			}
+		}
+
+		// start
+		MP.init();
+	</script>
+</html>
