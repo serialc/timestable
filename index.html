@@ -24,7 +24,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<style>
 			body {
-				margin-top: 4em;
+				margin-top: 2em;
 				background-color: white;
 			}
 			#question {
@@ -37,7 +37,7 @@
 			#numpad {
 				font-size: 3.5em;
 			}
-			#qc {
+			#qc, #qr {
 				padding: 3px 5px;
 
 			}
@@ -161,13 +161,19 @@
 			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', 0).on('mousedown', MP.numPadPress);
 
 			// create visualization of performance
-			rsize = 25;
+			rsize = 26;
 			MP.perf.append('line').attr('x1', 0).attr('y1', 50).attr('x2', 400).attr('y2', 50).attr('stroke', 'lightblue');
 			for( var n = 0; n < 13; n = n + 1 ) {
 				if( MP.records[n] > 0 ) {
 					MP.perf.append('rect').attr('id', 'b' + n).attr('x', space + n * (rsize + space)).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('width', rsize).attr('fill', 'lightblue');
 				} else {
 					MP.perf.append('rect').attr('id', 'b' + n).attr('x', space + n * (rsize + space)).attr('y', 50).attr('height', -MP.records[n]).attr('width', rsize).attr('fill', 'pink');
+				}
+				// display numbers
+				if ( n < 10 ) {
+					MP.perf.append('text').attr('x', rsize/2 + n * (rsize + space)).attr('y', 70).text(n);
+				} else {
+					MP.perf.append('text').attr('x', rsize/3 + n * (rsize + space)).attr('y', 70).text(n);
 				}
 			}
 
@@ -182,18 +188,28 @@
 			$('#qr').html('?');
 			$('#qc').hide();
 			$('#qp').width(0);
-			$('#question').removeClass('bg-danger bg-success');
+			$('#qr').removeClass('bg-danger bg-success');
 
 			// update bar graph
 			for( var n = 0; n < 13; n = n + 1 ) {
-				console.log(MP.records[n]);
 				if( MP.records[n] < 0 ) MP.perf.select('#b' + n).attr('y', 50).attr('height', -MP.records[n]).attr('fill', 'pink');
 				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('fill', 'lightblue');
 			}
 
 			// select two values to multiply
-			var qx = parseInt(Math.random() * 100,10)%13;
-			var qy = parseInt(Math.random() * 100,10)%13;
+			// create a bag of choice, where values with low scores are more frequently in the bag
+			var maxf = Math.max.apply(null, MP.records) + 1;
+			var bag = [];
+			var inbag = 0;
+			for ( var n = 0; n < 13; n = n + 1 ) {
+				inbag = maxf - MP.records[n]
+				while( inbag > 0 ) {
+					bag.push(n);
+					inbag = inbag - 1;
+				}
+			}
+			var qx = bag[parseInt(Math.random() * bag.length,10)];
+			var qy = bag[parseInt(Math.random() * bag.length,10)];
 
 			MP.question = [qx, qy];
 			MP.answer = (qx * qy).toString();
@@ -228,26 +244,41 @@
 				r.html(r.html() + pressed_val);
 			}
 
+			// advance progress bar, fast if correct, slow if wrong
+			MP.waiting = function() {
+				if( MP.progress_bar === 100) {
+					// load next question
+					setTimeout(MP.askQuestion, 10);
+				} else {
+					$('#qp').width(MP.progress_bar + '%');
+					MP.progress_bar = MP.progress_bar + 1;
+					setTimeout(MP.waiting, bar_speed);
+				}
+			};
+
+			var bar_speed = 35;
 			// success
 			if ( r.html() === MP.answer ) {
-				$('#question').addClass('bg-success');
+				$('#qr').addClass('bg-success');
 				// update records
-				MP.records[MP.question[0]] = MP.records[MP.question[0]] + 1;
-				MP.records[MP.question[1]] = MP.records[MP.question[1]] + 1;
+				MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) + 1;
+				MP.records[MP.question[1]] = parseInt(MP.records[MP.question[1]], 10) + 1;
 				setTimeout(MP.waiting, 1);
+				bar_speed = 3;
 			} 
 			// wrong
 			if ( MP.answer.slice(0,r.html().length) !== r.html() ) {
-				$('#question').addClass('bg-danger');
+				$('#qr').addClass('bg-danger');
 				// update records
-				MP.records[MP.question[0]] = MP.records[MP.question[0]] - 1;
-				MP.records[MP.question[1]] = MP.records[MP.question[1]] - 1;
+				MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) - 2;
+				MP.records[MP.question[1]] = parseInt(MP.records[MP.question[1]], 10) - 2;
 				$('#qc').show().html(MP.answer);
 				$('#qc').addClass('bg-success');
 				MP.freeze_numpad = true;
 				setTimeout(MP.waiting, 1);
 			}
-			// response incomplete do nothing
+			// else, response incomplete do nothing
+
 
 			// update records on browser
 			localStorage.records = MP.records;
@@ -258,17 +289,6 @@
 				MP.num.select('#n' + pressed_val).attr('class', 'emptysq');
 			}
 			setTimeout(change_back, 90);
-		};
-
-		MP.waiting = function() {
-			if( MP.progress_bar === 100) {
-				// load next question
-				setTimeout(MP.askQuestion, 10);
-			} else {
-				$('#qp').width(MP.progress_bar + '%');
-				MP.progress_bar = MP.progress_bar + 1;
-				setTimeout(MP.waiting, 15);
-			}
 		};
 
 		// start
