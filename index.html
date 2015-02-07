@@ -70,7 +70,7 @@
 						</div>
 					</div>
 					<div class='row'>
-						<div id='matrix' class='col-sm-12'>
+						<div id='matrix' class='hidden-xs col-sm-12'>
 						</div>
 					</div>
 				</div>
@@ -202,7 +202,9 @@
 			var bag = [];
 			var inbag = 0;
 			for ( var n = 0; n < 13; n = n + 1 ) {
-				inbag = maxf - MP.records[n]
+				// get the difference between the highest score
+				inbag = maxf - MP.records[n];
+				// add to bag the same number of times as the difference
 				while( inbag > 0 ) {
 					bag.push(n);
 					inbag = inbag - 1;
