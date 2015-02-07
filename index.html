@@ -31,7 +31,7 @@
 				font-size: 3em;
 				height: 2em;
 			}
-			#numpad, #matrix, #question {
+			#numpad, #matrix, #question, #performance {
 				text-align: center;
 			}
 			#numpad {
@@ -77,7 +77,10 @@
 				<div id='numpad' class='col-sm-6'>
 				</div>
 			</div>
-			<!-- New rows for lessons come here -->
+			<div class='row'>
+				<div id='performance' class='col-sm-12'>
+				</div>
+			</div>
 		</div>
 	</body>
 
@@ -94,13 +97,20 @@
 			$('#qc').hide();
 			MP.progress_bar = 0;
 
+			// load previous stats
+			if ( localStorage.records === undefined ) {
+				MP.records = [0,0,0,0,0,0,0,0,0,0,0,0,0]
+			} else {
+				MP.records = localStorage.records.split(',');
+			}
+
 			// do SVG setup
 			MP.mat = d3.select("#matrix").append("svg")
-				.attr("width", '300')
-				.attr("height", '300');
+				.attr("width", '300').attr("height", '300');
 			MP.num = d3.select("#numpad").append("svg")
-				.attr("width", '300')
-				.attr("height", '400');
+				.attr("width", '300').attr("height", '400');
+			MP.perf = d3.select("#performance").append("svg")
+				.attr("width", '400').attr("height", '100');
 
 			// create rects
 			var rsize = MP.rsize;
@@ -138,7 +148,7 @@
 			rsize = rsize * 5;
 			for ( y = 1; y < 4; y = y + 1 ) {
 				for ( x = 3; x > 0; x = x - 1 ) {
-					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq');
+					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'n' + numval);
 					MP.num.append('text').text(numval).attr('x', space + (x-1) * (rsize + space) + rsize/3).attr('y', space + (y-1) * (rsize + space) + rsize/1.5);
 					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', numval).on('mousedown', MP.numPadPress);
 					numval = numval - 1;
@@ -146,9 +156,20 @@
 			}
 
 			// add zero button
-			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('class', 'emptysq');
+			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'n' + numval);
 			MP.num.append('text').text(0).attr('x', 1.3 * rsize + 2 * space).attr('y', 3.75 * rsize + 3 * space);
 			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', 0).on('mousedown', MP.numPadPress);
+
+			// create visualization of performance
+			rsize = 25;
+			MP.perf.append('line').attr('x1', 0).attr('y1', 50).attr('x2', 400).attr('y2', 50).attr('stroke', 'lightblue');
+			for( var n = 0; n < 13; n = n + 1 ) {
+				if( MP.records[n] > 0 ) {
+					MP.perf.append('rect').attr('id', 'b' + n).attr('x', space + n * (rsize + space)).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('width', rsize).attr('fill', 'lightblue');
+				} else {
+					MP.perf.append('rect').attr('id', 'b' + n).attr('x', space + n * (rsize + space)).attr('y', 50).attr('height', -MP.records[n]).attr('width', rsize).attr('fill', 'pink');
+				}
+			}
 
 			// start game
 			MP.askQuestion();
@@ -163,10 +184,18 @@
 			$('#qp').width(0);
 			$('#question').removeClass('bg-danger bg-success');
 
+			// update bar graph
+			for( var n = 0; n < 13; n = n + 1 ) {
+				console.log(MP.records[n]);
+				if( MP.records[n] < 0 ) MP.perf.select('#b' + n).attr('y', 50).attr('height', -MP.records[n]).attr('fill', 'pink');
+				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('fill', 'lightblue');
+			}
+
 			// select two values to multiply
 			var qx = parseInt(Math.random() * 100,10)%13;
 			var qy = parseInt(Math.random() * 100,10)%13;
 
+			MP.question = [qx, qy];
 			MP.answer = (qx * qy).toString();
 
 			// display the values in question
@@ -192,26 +221,43 @@
 			if ( MP.freeze_numpad ) return;
 
 			// put value in response box
+			pressed_val = this.getAttribute('val');
 			if ( r.html() === '?' ) {
-				r.html(this.getAttribute('val'));
+				r.html(pressed_val);
 			} else {
-				r.html(r.html() + this.getAttribute('val'));
+				r.html(r.html() + pressed_val);
 			}
 
 			// success
 			if ( r.html() === MP.answer ) {
 				$('#question').addClass('bg-success');
+				// update records
+				MP.records[MP.question[0]] = MP.records[MP.question[0]] + 1;
+				MP.records[MP.question[1]] = MP.records[MP.question[1]] + 1;
 				setTimeout(MP.waiting, 1);
 			} 
 			// wrong
 			if ( MP.answer.slice(0,r.html().length) !== r.html() ) {
 				$('#question').addClass('bg-danger');
+				// update records
+				MP.records[MP.question[0]] = MP.records[MP.question[0]] - 1;
+				MP.records[MP.question[1]] = MP.records[MP.question[1]] - 1;
 				$('#qc').show().html(MP.answer);
 				$('#qc').addClass('bg-success');
 				MP.freeze_numpad = true;
 				setTimeout(MP.waiting, 1);
 			}
 			// response incomplete do nothing
+
+			// update records on browser
+			localStorage.records = MP.records;
+			
+			// colour button for a short time
+			MP.num.select('#n' + pressed_val).attr('class', 'fullsq');
+			var change_back = function() {
+				MP.num.select('#n' + pressed_val).attr('class', 'emptysq');
+			}
+			setTimeout(change_back, 90);
 		};
 
 		MP.waiting = function() {
