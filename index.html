@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang='en'>
 	<head>
+		<title>Times table</title>
 		<meta charset=utf-8>
-		<meta name="viewport" content="initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 		<!-- jQuery -->
 		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
 		<!-- D3 -->
@@ -42,6 +43,14 @@
 			#numpad, #matrix, #question, #performance {
 				text-align: center;
 			}
+			#vnav button {
+				text-align: center;
+				width: 40px;
+			}
+			#hnav {
+				text-align: center;
+				margin-bottom: 50px;
+			}
 			#numpad {
 				font-size: 3.5em;
 			}
@@ -65,28 +74,30 @@
 	<body>
 		<div id='container' class='container'>
 			<div class='row'>
-				<div class='col-sm-12'>
-					<h1></h1>
+				<div id='hnav' class='visible-xs col-sm-12'>
 				</div>
 			</div>
 			<div class='row'>
-				<div class='col-sm-6'>
+				<div id='vnav' class='hidden-xs col-sm-1'> </div>
+				<div class='col-sm-11'>
 					<div class='row'>
-						<div id='question' class='col-sm-12'>
-							<span id='qx'>x</span> x <span id='qy'>y</span> = <span id='qr'>?</span> <span id='qc'></span>
-							<div id='qp' class='bg-primary'></div>
+						<div class='col-sm-5'>
+							<div class='row'>
+								<div id='question' class='col-sm-12'>
+									<span id='qx'>x</span> x <span id='qy'>y</span> = <span id='qr'>?</span> <span id='qc'></span>
+									<div id='qp' class='bg-primary'></div>
+								</div>
+							</div>
+							<div class='row'>
+								<div id='matrix' class='hidden-xs col-sm-12'>
+								</div>
+							</div>
 						</div>
+						<div id='numpad' class='col-sm-6'> </div>
 					</div>
 					<div class='row'>
-						<div id='matrix' class='hidden-xs col-sm-12'>
-						</div>
+						<div id='performance' class='col-sm-12'> </div>
 					</div>
-				</div>
-				<div id='numpad' class='col-sm-6'>
-				</div>
-			</div>
-			<div class='row'>
-				<div id='performance' class='col-sm-12'>
 				</div>
 			</div>
 		</div>
@@ -101,9 +112,19 @@
 
 
 		MP.init = function() {	
+			// populate navigation bars
+			var navtext = "<button id='mb*' type='button' class='btn btn-default' onclick=\"MP.setmode('*')\">All</button>\n";
+			for(var i = 2; i < 13; i = i + 1) {
+				//navtext += "<div class='col-sm-12'>" + i + "</div>\n";
+				navtext += "<button id='mb" + i + "' type='button' class='btn btn-default' onclick=\"MP.setmode(" + i + ")\">" + i + "</button>\n";
+			}
+			$('#hnav').html(navtext);
+			$('#vnav').html(navtext);
+
 			// game setup
 			$('#qc').hide();
 			MP.progress_bar = 0;
+			MP.mode = '*';
 
 			// load previous stats
 			if ( localStorage.records === undefined ) {
@@ -200,7 +221,7 @@
 
 			// update bar graph
 			for( var n = 0; n < 13; n = n + 1 ) {
-				if( MP.records[n] < 0 ) MP.perf.select('#b' + n).attr('y', 50).attr('height', -MP.records[n]).attr('fill', 'pink');
+				if( MP.records[n] <= 0 ) MP.perf.select('#b' + n).attr('y', 50).attr('height', -MP.records[n]).attr('fill', 'pink');
 				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('fill', 'lightblue');
 			}
 
@@ -218,8 +239,13 @@
 					inbag = inbag - 1;
 				}
 			}
+
+			// set question values - look at mode
 			var qx = bag[parseInt(Math.random() * bag.length,10)];
 			var qy = bag[parseInt(Math.random() * bag.length,10)];
+			if( MP.mode !== '*' ) {
+				qx = MP.mode;
+			}
 
 			MP.question = [qx, qy];
 			MP.answer = (qx * qy).toString();
@@ -271,7 +297,9 @@
 			if ( r.html() === MP.answer ) {
 				$('#qr').addClass('bg-success');
 				// update records
-				MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) + 1;
+				if( MP.mode === '*' ) {
+					MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) + 1;
+				}
 				MP.records[MP.question[1]] = parseInt(MP.records[MP.question[1]], 10) + 1;
 				setTimeout(MP.waiting, 1);
 				bar_speed = 3;
@@ -280,7 +308,9 @@
 			if ( MP.answer.slice(0,r.html().length) !== r.html() ) {
 				$('#qr').addClass('bg-danger');
 				// update records
-				MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) - 2;
+				if( MP.mode === '*' ) {
+					MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) - 2;
+				}
 				MP.records[MP.question[1]] = parseInt(MP.records[MP.question[1]], 10) - 2;
 				$('#qc').show().html(MP.answer);
 				$('#qc').addClass('bg-success');
@@ -299,6 +329,15 @@
 				MP.num.select('#n' + pressed_val).attr('class', 'emptysq');
 			}
 			setTimeout(change_back, 90);
+		};
+
+		MP.setmode = function(mode) {
+			// clear local storage and JS var
+			localStorage.clear();
+			MP.records = [0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+			MP.mode = mode;
+			MP.askQuestion();
 		};
 
 		// start
