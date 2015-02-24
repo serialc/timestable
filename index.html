@@ -7,7 +7,7 @@
 		<!-- jQuery -->
 		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
 		<!-- D3 -->
-		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
 		<!-- Android customization -->
 		<link rel="manifest" href="manifest.json">
 		<!-- iOS customization -->
@@ -333,8 +333,11 @@
 		};
 
 		MP.setmode = function(mode) {
+			// if choosing the same mode again, does nothin - not reload new question
+			if ( MP.mode === mode ) return;
+
 			// clear local storage and JS var
-			localStorage.clear();
+			//localStorage.clear();
 			MP.records = [0,0,0,0,0,0,0,0,0,0,0,0,0]
 
 			MP.mode = mode;
