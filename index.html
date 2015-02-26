@@ -51,8 +51,12 @@
 				text-align: center;
 				margin-bottom: 50px;
 			}
+			#numpad div.row {
+				text-align: center;
+			}
 			#numpad button {
 				font-size: 3.5em;
+				border-radius: 0px;
 			}
 			#qc, #qr {
 				padding: 3px 5px;
@@ -74,7 +78,7 @@
 	<body>
 		<div id='container' class='container'>
 			<div class='row'>
-				<div id='hnav' class='visible-xs col-sm-12'>
+				<div id='hnav' class='visible-xs col-xs-12'>
 				</div>
 			</div>
 			<div class='row'>
@@ -93,7 +97,8 @@
 								</div>
 							</div>
 						</div>
-						<div id='numpad' class='col-sm-6'> </div>
+						<div class='visible-xs col-xs-2'> </div>
+						<div id='numpad' class='col-xs-8 col-sm-6'> </div>
 					</div>
 					<div class='row'>
 						<div id='performance' class='col-sm-12'> </div>
@@ -125,15 +130,15 @@
 			// create numpad
 			var padtext = '';
 			for(var i = 2; i >= 0; i = i - 1) {
-				padtext = padtext + "<div class='row'>";
+				padtext = padtext;// + "<div class='row'>";
 				for(var j = 1; j < 4; j = j + 1) {
-					padtext = padtext + "<button type='button' class='btn btn-default col-sm-4' onclick=\"MP.numPadPress(" + (i*3+j) + ")\">" + (i*3+j) + "</button>\n";
+					padtext = padtext + "<button type='button' class='btn btn-default col-xs-4 col-sm-4' onclick=\"MP.numPadPress(" + (i*3+j) + ")\">" + (i*3+j) + "</button>\n";
 				}
-				padtext = padtext + "</div>";
+				padtext = padtext;// + "</div>";
 			}
 			
 			// add zero at the end
-			padtext = padtext + "<div class='row'><button type='button' class='btn btn-default col-sm-12' onclick=\"MP.numPadPress(0)\">0</button></div>\n";
+			padtext = padtext + "<button type='button' class='btn btn-default col-xs-12 col-sm-12' onclick=\"MP.numPadPress(0)\">0</button>\n";
 			$('#numpad').html(padtext);
 
 			// game setup
@@ -230,10 +235,10 @@
 
 			// update bar graph
 			var maxs = absmax(MP.records);
-			maxs = (maxs == 0) ? MP.graph_height/2 : maxs * graph_height/2;
+			maxs = (maxs == 0) ? 1 : maxs;
 			for( var n = 0; n < 13; n = n + 1 ) {
-				if( MP.records[n] <= 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2).attr('height', -MP.records[n]/maxs).attr('fill', 'pink');
-				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2 - MP.records[n]/maxs).attr('height', MP.records[n]/maxs).attr('fill', 'lightblue');
+				if( MP.records[n] <= 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2).attr('height', -MP.records[n]/maxs * MP.graph_height/2).attr('fill', 'pink');
+				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2 - MP.records[n]/maxs * MP.graph_height/2).attr('height', MP.records[n]/maxs * MP.graph_height/2).attr('fill', 'lightblue');
 			}
 
 			// select two values to multiply
