@@ -107,7 +107,8 @@
 		// global var and settings
 		MP = {
 			rsize: 18,
-			space: 4
+			space: 4,
+			graph_height: 100
 			};
 
 
@@ -153,7 +154,7 @@
 			//MP.num = d3.select("#numpad").append("svg")
 			//	.attr("width", '300').attr("height", '400');
 			MP.perf = d3.select("#performance").append("svg")
-				.attr("width", '400').attr("height", '100');
+				.attr("width", '400').attr("height", MP.graph_height);
 
 			// create rects
 			var rsize = MP.rsize;
@@ -208,6 +209,7 @@
 		};
 
 		MP.askQuestion = function() {
+
 			// reset some things
 			MP.progress_bar = 0;
 			MP.freeze_numpad = false;
@@ -216,10 +218,22 @@
 			$('#qp').width(0);
 			$('#qr').removeClass('bg-danger bg-success');
 
+			var absmax = function(nums) {
+				themax = 0;
+				for(var i = 0; i < nums.length; i = i + 1) {
+					if(Math.abs(nums[i]) > themax) {
+						themax = Math.abs(nums[i]);
+					}
+				}
+				return themax;
+			}
+
 			// update bar graph
+			var maxs = absmax(MP.records);
+			maxs = (maxs == 0) ? MP.graph_height/2 : maxs * graph_height/2;
 			for( var n = 0; n < 13; n = n + 1 ) {
-				if( MP.records[n] <= 0 ) MP.perf.select('#b' + n).attr('y', 50).attr('height', -MP.records[n]).attr('fill', 'pink');
-				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', 50 - MP.records[n]).attr('height', MP.records[n]).attr('fill', 'lightblue');
+				if( MP.records[n] <= 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2).attr('height', -MP.records[n]/maxs).attr('fill', 'pink');
+				if( MP.records[n] > 0 ) MP.perf.select('#b' + n).attr('y', MP.graph_height/2 - MP.records[n]/maxs).attr('height', MP.records[n]/maxs).attr('fill', 'lightblue');
 			}
 
 			// select two values to multiply
