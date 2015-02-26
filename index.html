@@ -123,14 +123,12 @@
 
 			// create numpad
 			var padtext = '';
-			for(var i = 1; i < 10; i = i + 1) {
-				if( i % 3 === 1 ) {
-					padtext = padtext + "<div class='row'>";
+			for(var i = 2; i >= 0; i = i - 1) {
+				padtext = padtext + "<div class='row'>";
+				for(var j = 1; j < 4; j = j + 1) {
+					padtext = padtext + "<button type='button' class='btn btn-default col-sm-4' onclick=\"MP.numPadPress(" + (i*3+j) + ")\">" + (i*3+j) + "</button>\n";
 				}
-				padtext += "<button type='button' class='btn btn-default col-sm-4' onclick=\"MP.numPadPress(" + i + ")\">" + i + "</button>\n";
-				if( i % 3 === 0 ) {
-					padtext = padtext + "</div>";
-				}
+				padtext = padtext + "</div>";
 			}
 			
 			// add zero at the end
