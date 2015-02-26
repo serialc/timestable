@@ -51,7 +51,7 @@
 				text-align: center;
 				margin-bottom: 50px;
 			}
-			#numpad {
+			#numpad button {
 				font-size: 3.5em;
 			}
 			#qc, #qr {
@@ -121,6 +121,22 @@
 			$('#hnav').html(navtext);
 			$('#vnav').html(navtext);
 
+			// create numpad
+			var padtext = '';
+			for(var i = 1; i < 10; i = i + 1) {
+				if( i % 3 === 1 ) {
+					padtext = padtext + "<div class='row'>";
+				}
+				padtext += "<button type='button' class='btn btn-default col-sm-4' onclick=\"MP.numPadPress(" + i + ")\">" + i + "</button>\n";
+				if( i % 3 === 0 ) {
+					padtext = padtext + "</div>";
+				}
+			}
+			
+			// add zero at the end
+			padtext = padtext + "<div class='row'><button type='button' class='btn btn-default col-sm-12' onclick=\"MP.numPadPress(0)\">0</button></div>\n";
+			$('#numpad').html(padtext);
+
 			// game setup
 			$('#qc').hide();
 			MP.progress_bar = 0;
@@ -136,8 +152,8 @@
 			// do SVG setup
 			MP.mat = d3.select("#matrix").append("svg")
 				.attr("width", '300').attr("height", '300');
-			MP.num = d3.select("#numpad").append("svg")
-				.attr("width", '300').attr("height", '400');
+			//MP.num = d3.select("#numpad").append("svg")
+			//	.attr("width", '300').attr("height", '400');
 			MP.perf = d3.select("#performance").append("svg")
 				.attr("width", '400').attr("height", '100');
 
@@ -171,23 +187,6 @@
 					if ( x > 0 && y > 0 ) MP.mat.append('rect').attr('x', space + (x) * (rsize + space)).attr('y', space + (y) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'm' + x + '_' + y);
 				}
 			}
-
-			// create keypad
-			var numval = 9;
-			rsize = rsize * 5;
-			for ( y = 1; y < 4; y = y + 1 ) {
-				for ( x = 3; x > 0; x = x - 1 ) {
-					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'n' + numval);
-					MP.num.append('text').text(numval).attr('x', space + (x-1) * (rsize + space) + rsize/3).attr('y', space + (y-1) * (rsize + space) + rsize/1.5);
-					MP.num.append('rect').attr('x', space + (x-1) * (rsize + space)).attr('y', space + (y-1) * (rsize + space)).attr('width', rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', numval).on('mousedown', MP.numPadPress);
-					numval = numval - 1;
-				}
-			}
-
-			// add zero button
-			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('class', 'emptysq').attr('id', 'n' + numval);
-			MP.num.append('text').text(0).attr('x', 1.3 * rsize + 2 * space).attr('y', 3.75 * rsize + 3 * space);
-			MP.num.append('rect').attr('x', space).attr('y', 3 * (space + rsize) + space).attr('width', 2 * space + 3 * rsize).attr('height', rsize).attr('opacity', 0.01).attr('val', 0).on('mousedown', MP.numPadPress);
 
 			// create visualization of performance
 			rsize = 26;
@@ -266,18 +265,17 @@
 			}
 		};
 
-		MP.numPadPress = function() {
+		MP.numPadPress = function(val) {
 			// response
 			var r = $('#qr');
 			
 			if ( MP.freeze_numpad ) return;
 
 			// put value in response box
-			pressed_val = this.getAttribute('val');
 			if ( r.html() === '?' ) {
-				r.html(pressed_val);
+				r.html(val);
 			} else {
-				r.html(r.html() + pressed_val);
+				r.html(r.html() + val);
 			}
 
 			// advance progress bar, fast if correct, slow if wrong
@@ -323,13 +321,6 @@
 
 			// update records on browser
 			localStorage.records = MP.records;
-			
-			// colour button for a short time
-			MP.num.select('#n' + pressed_val).attr('class', 'fullsq');
-			var change_back = function() {
-				MP.num.select('#n' + pressed_val).attr('class', 'emptysq');
-			}
-			setTimeout(change_back, 90);
 		};
 
 		MP.setmode = function(mode) {
