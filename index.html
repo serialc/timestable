@@ -4,10 +4,6 @@
 		<title>Times table</title>
 		<meta charset=utf-8>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-		<!-- jQuery -->
-		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
-		<!-- D3 -->
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
 		<!-- Android customization -->
 		<link rel="manifest" href="manifest.json">
 		<!-- iOS customization -->
@@ -21,46 +17,45 @@
 		<link rel="apple-touch-icon" sizes="120x120" href="icon/touch-icon-iphone-retina.png">
 		<link rel="apple-touch-icon" sizes="152x152" href="icon/touch-icon-ipad-retina.png">
 		<!-- Latest compiled and minified CSS -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/bootstrap.min.css">
 
-		<!-- Optional theme -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+		<!-- Bootstrap -->
+        <!-- <script src="js/bootstrap.min.js"></script> -->
 
-		<!-- Latest compiled and minified JavaScript -->
-		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+		<!-- D3 -->
+		<script src="js/d3.min.js" charset="utf-8"></script>
 
 		<!-- BS options -->
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<style>
 			body {
-				margin-top: 2em;
+				margin-top: 1em;
 				background-color: white;
+				margin-bottom: 1em;
 			}
 			#question {
 				font-size: 3em;
-				height: 2em;
 			}
-			#numpad, #matrix, #question, #performance, #hnav, #vnav {
+			#numpad, #question, #hnav, #vnav {
 				text-align: center;
-			}
-			#hnav {
-				margin-bottom: 50px;
 			}
 			#hnav .btn {
 				padding: 6px 0px;
 			}
 			#numpad button {
 				font-size: 3.5em;
-				border-radius: 0px;
 			}
 			#qc, #qr {
 				padding: 3px 5px;
-
 			}
 			#qp {
-				width: 0%;
+                width: 0%;
 				height: 10px;
+                margin-bottom: 5px;
 			}
+            .npb {
+                width: 100%;
+            }
 			.emptysq {
 				stroke: lightgrey;
 				fill: white;
@@ -73,29 +68,34 @@
 	<body>
 		<div id='container' class='container'>
 			<div class='row'>
-				<div id='hnav' role='group' class='visible-xs col-xs-12 btn-group'> </div>
+				<div id='hnav' class='d-md-none d-sm-block col-12 btn-group'> </div>
 			</div>
 			<div class='row'>
-				<div id='vnav' role='group' class='hidden-xs col-sm-2 col-md-1 btn-group-vertical'> </div>
-				<div class='col-sm-10 col-md-11'>
+				<div id='vnav' class='d-none d-md-block col-1 btn-group-vertical'> </div>
+				<div class='col-sm-12 col-md-11'>
 					<div class='row'>
-						<div class='col-sm-6'>
+						<div class='col-md-6'>
 							<div class='row'>
-								<div id='question' class='col-sm-12'>
-									<span id='qx'>x</span> x <span id='qy'>y</span> = <span id='qr'>?</span> <span id='qc'></span>
-									<div id='qp' class='bg-primary'></div>
+								<div id='question' class='col-12'>
+									<span id='qx'>x</span> x <span id='qy'>y</span> = <span id='qr'>?</span> <span id='qc' class="bg-success"></span>
 								</div>
+                                <div class='col-12'>
+									<div id='qp' class='bg-primary'></div>
+                                </div>
 							</div>
 							<div class='row'>
-								<div id='matrix' class='hidden-xs col-sm-12'>
+								<div class='d-none d-md-block col-sm-12'>
+                                    <svg id='matrix' width="100%" viewbox="0 0 300 300"> </svg>
 								</div>
 							</div>
 						</div>
-						<div class='visible-xs col-xs-2'> </div>
-						<div id='numpad' class='col-xs-8 col-sm-6'> </div>
+						<div class='col-sm-3 d-md-none'> </div>
+						<div id='numpad' class='col-xs-12 col-sm-6'> </div>
 					</div>
-					<div class='row'>
-						<div id='performance' class='col-sm-12'> </div>
+					<div class='row mt-2'>
+						<div class='col-12'>
+                            <svg id='performance' width="100%" viewbox="0 0 400 100"> </svg>
+                        </div>
 					</div>
 				</div>
 			</div>
@@ -113,30 +113,28 @@
 
 		MP.init = function() {	
 			// populate navigation bars
-			var navtext = "<button id='mb*' type='button' class='btn btn-default col-xs-1' onclick=\"MP.setmode('*')\">All</button>\n";
+            let navtext = "";
+            navtext += "<button type='button' class='btn btn-secondary col-1 px-0' onclick=\"MP.setmode('*')\">*</button>";
 			for(var i = 2; i < 13; i = i + 1) {
-				//navtext += "<div class='col-sm-12'>" + i + "</div>\n";
-				navtext += "<button id='mb" + i + "' type='button' class='btn btn-default col-xs-1' onclick=\"MP.setmode(" + i + ")\">" + i + "</button>\n";
+                navtext += "<button type='button' class='btn btn-secondary col-1 px-0' onclick=\"MP.setmode(" + i + ")\">" + i + "</button>";
 			}
-			$('#hnav').html(navtext);
-			$('#vnav').html(navtext);
+
+            document.getElementById('hnav').innerHTML = navtext;
+            document.getElementById('vnav').innerHTML = navtext;
 
 			// create numpad
-			var padtext = '';
-			for(var i = 2; i >= 0; i = i - 1) {
-				padtext = padtext;// + "<div class='row'>";
-				for(var j = 1; j < 4; j = j + 1) {
-					padtext = padtext + "<button type='button' class='btn btn-default col-xs-4 col-sm-4' onclick=\"MP.numPadPress(" + (i*3+j) + ")\">" + (i*3+j) + "</button>\n";
-				}
-				padtext = padtext;// + "</div>";
-			}
+			var padtext = "<div class='row g-1'>";
+			for(var i = 1; i <= 9; i = i + 1) {
+                padtext = padtext + "<div class='col-4'><button type='button' class='btn btn-primary npb' onclick='MP.numPadPress(" + i + ")'>" + i + "</button></div>\n";
+            }
+            padtext = padtext + "<div class='col-12'><button type='button' class='btn btn-primary npb' onclick='MP.numPadPress(0)'>0</button></div>\n";
+            padtext = padtext + "</div>";
 			
-			// add zero at the end
-			padtext = padtext + "<button type='button' class='btn btn-default col-xs-12 col-sm-12' onclick=\"MP.numPadPress(0)\">0</button>\n";
-			$('#numpad').html(padtext);
+			// add content page
+            document.getElementById('numpad').innerHTML = padtext;
 
 			// game setup
-			$('#qc').hide();
+            document.getElementById('qc').style.display = 'none';
 			MP.progress_bar = 0;
 			MP.mode = '*';
 
@@ -148,12 +146,9 @@
 			}
 
 			// do SVG setup
-			MP.mat = d3.select("#matrix").append("svg")
-				.attr("width", '300').attr("height", '300');
-			//MP.num = d3.select("#numpad").append("svg")
-			//	.attr("width", '300').attr("height", '400');
-			MP.perf = d3.select("#performance").append("svg")
-				.attr("width", '400').attr("height", MP.graph_height);
+			MP.mat = d3.select("#matrix");
+
+			MP.perf = d3.select("#performance");
 
 			// create rects
 			var rsize = MP.rsize;
@@ -212,10 +207,14 @@
 			// reset some things
 			MP.progress_bar = 0;
 			MP.freeze_numpad = false;
-			$('#qr').html('?');
-			$('#qc').hide();
-			$('#qp').width(0);
-			$('#qr').removeClass('bg-danger bg-success');
+            qr = document.getElementById('qr');
+            qr.innerHTML = '?';
+            qr.classList.remove('bg-danger');
+            qr.classList.remove('bg-success');
+
+            document.getElementById('qc').style.display = 'none';
+
+            document.getElementById('qp').style.width = '0%';
 
 			var absmax = function(nums) {
 				themax = 0;
@@ -261,8 +260,8 @@
 			MP.answer = (qx * qy).toString();
 
 			// display the values in question
-			$('#qx').html(qx);
-			$('#qy').html(qy);
+            document.getElementById('qx').innerHTML = qx;
+            document.getElementById('qy').innerHTML = qy;
 
 			// display the boxes
 			for ( x = 0; x < 13; x = x + 1 ) {
@@ -278,24 +277,26 @@
 
 		MP.numPadPress = function(val) {
 			// response
-			var r = $('#qr');
+			var r = document.getElementById('qr');
 			
 			if ( MP.freeze_numpad ) return;
 
 			// put value in response box
-			if ( r.html() === '?' ) {
-				r.html(val);
+			if ( r.innerHTML === '?' ) {
+				r.innerHTML = val;
 			} else {
-				r.html(r.html() + val);
+				r.innerHTML += val;
 			}
 
 			// advance progress bar, fast if correct, slow if wrong
 			MP.waiting = function() {
+                let qp = document.getElementById('qp');
 				if( MP.progress_bar === 100) {
 					// load next question
 					setTimeout(MP.askQuestion, 10);
 				} else {
-					$('#qp').width(MP.progress_bar + '%');
+                    qp.style.width = MP.progress_bar + '%';
+
 					MP.progress_bar = MP.progress_bar + 1;
 					setTimeout(MP.waiting, bar_speed);
 				}
@@ -303,8 +304,9 @@
 
 			var bar_speed = 35;
 			// correct
-			if ( r.html() === MP.answer ) {
-				$('#qr').addClass('bg-success');
+			if ( r.innerHTML === MP.answer ) {
+                document.getElementById('qr').classList.add('bg-success');
+
 				// update records
 				if( MP.mode === '*' ) {
 					MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) + 1;
@@ -315,15 +317,19 @@
 				bar_speed = 3;
 			} 
 			// wrong
-			if ( MP.answer.slice(0,r.html().length) !== r.html() ) {
-				$('#qr').addClass('bg-danger');
+			if ( MP.answer.slice(0, r.innerHTML.length) !== r.innerHTML ) {
+                document.getElementById('qr').classList.add('bg-danger');
+
 				// update records
 				if( MP.mode === '*' ) {
 					MP.records[MP.question[0]] = parseInt(MP.records[MP.question[0]], 10) - 2;
 				}
 				MP.records[MP.question[1]] = parseInt(MP.records[MP.question[1]], 10) - 2;
-				$('#qc').show().html(MP.answer);
-				$('#qc').addClass('bg-success');
+
+                let qc = document.getElementById('qc');
+                qc.style.display = '';
+                qc.innerHTML = MP.answer;
+
 				MP.freeze_numpad = true;
 				setTimeout(MP.waiting, 1);
 			}
